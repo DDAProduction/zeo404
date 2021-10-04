@@ -1,0 +1,19 @@
+{
+  "name": "ddaproduction/zeo404",
+  "require": {
+    "paquettg/php-html-parser": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "DDAProduction\\Zeo404\\": "src"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "DDAProduction\\Zeo404\\Zeo404ServiceProvider"
+      ]
+
+    }
+  }
+}
