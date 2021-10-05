@@ -1,5 +1,12 @@
 {
   "name": "ddaproduction/zeo404",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Alexander Pashkevich",
+      "email": "sertious2008.wortk3@gmail.com"
+    }
+  ],
   "require": {
     "paquettg/php-html-parser": "*"
   },
@@ -13,7 +20,6 @@
       "providers": [
         "DDAProduction\\Zeo404\\Zeo404ServiceProvider"
       ]
-
     }
   }
 }
