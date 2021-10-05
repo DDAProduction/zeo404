@@ -25,7 +25,7 @@ $data = [
     'action' => $action,
     'tab' => $tab,
 ];
-$view = View::addNamespace('Zeo', dirname(__FILE__) . '/../custom/packages/zeo404/modules/zeo/views');
+
 
 if (isset($_POST['page_id'])) {
     if(isset($_POST['redirect_id']) && $_POST['redirect_id'] == ''){

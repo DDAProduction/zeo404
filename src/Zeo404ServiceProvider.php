@@ -1,4 +1,5 @@
 <?php
+
 namespace DDAProduction\Zeo404;
 
 use DDAProduction\Zeo404\Console\SelfParse;
@@ -22,9 +23,13 @@ class Zeo404ServiceProvider extends ServiceProvider
     public function register()
     {
         $this->commands([SelfParse::class]);
+
         $this->loadPluginsFrom(
             dirname(__DIR__) . '/plugins/'
         );
+
+        $this->loadViewsFrom(__DIR__ . '/../modules/zeo/views', 'Zeo');
+
 
         if (isset($_SESSION['mgrRole']) && ($_SESSION['mgrRole'] == 1 || $_SESSION['mgrRole'] == 8)) {
             $this->app->registerModule(
