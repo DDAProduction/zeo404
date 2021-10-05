@@ -31,6 +31,21 @@
                             onClick="document.location.href='{{$_SERVER['REQUEST_URI']}}'">Redirect for url {{$url}}</span>
                 </h2>
             @endif
+
+            <h2 id="page3" class="tab @if($tab == "404info") selected @endif "><span
+                        onClick="document.location.href='{{$module_url}}&tab=404info'">404 info</span></h2>
+
+            @if($tab == '404info_task')
+                <h2 id="page4" class="tab @if($tab == "404info_task") selected @endif"><span
+                            onClick="document.location.href='{{$_SERVER['REQUEST_URI']}}'">Pages for task {{$task->name}} {{$task->date_end}}</span>
+                </h2>
+            @endif
+
+            @if($tab == '404info_page')
+                <h2 id="page4" class="tab @if($tab == "404info_page") selected @endif"><span
+                            onClick="document.location.href='{{$_SERVER['REQUEST_URI']}}'">Pages for task {{$page->url}}</span>
+                </h2>
+            @endif
         </div>
 
         <div id="tab-page1" class="tab-page" @if($tab == "main") style="display:block;"
@@ -38,7 +53,7 @@
             <table class="table table-striped">
                 <thead>
                 <tr>
-                    <th  style="width: 50px;">#</th>
+                    <th style="width: 50px;">#</th>
                     <th scope="col">Url</th>
                     <th scope="col">Count enter page</th>
                     <th scope="col">Exclude</th>
@@ -50,7 +65,7 @@
                 @if(isset($links))
                     @foreach($links as $link)
                         <tr id="url_{{$link->id}}">
-                            <td  style="width: 50px;">{{$loop->iteration}}</td>
+                            <td style="width: 50px;">{{$loop->iteration}}</td>
                             <td>{{$link->url}}</td>
                             <td><a href="{{$module_url}}&tab=all_error&url_id={{$link->id}}">{{$link->count_error}}</a>
                             </td>
@@ -92,7 +107,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th  style="width: 50px;">#</th>
+                        <th style="width: 50px;">#</th>
                         <th scope="col">Referer</th>
                         <th scope="col">User data</th>
                         <th scope="col">Date</th>
@@ -103,7 +118,7 @@
                     @if(isset($history))
                         @foreach($history as $link)
                             <tr>
-                                <td  style="width: 50px;">{{$loop->iteration}}</td>
+                                <td style="width: 50px;">{{$loop->iteration}}</td>
                                 <td>{{$link->referer}}</td>
                                 <td>{{$link->user_data}}</td>
                                 <td>{{$link->created_at}}</td>
@@ -126,7 +141,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th  style="width: 50px;">#</th>
+                        <th style="width: 50px;">#</th>
                         <th scope="col">Page Id</th>
                         <th scope="col">Exclude</th>
                         <th scope="col">Date</th>
@@ -137,7 +152,7 @@
                     @if(isset($redirects))
                         @foreach($redirects as $link)
                             <tr>
-                                <td  style="width: 50px;">{{$loop->iteration}}</td>
+                                <td style="width: 50px;">{{$loop->iteration}}</td>
                                 <td>
                                     <form class="form-inline" method="POST" action="{{$_SERVER['REQUEST_URI']}}">
                                         <div class="form-group mx-sm-3 mb-2">
@@ -188,6 +203,249 @@
                     </div>
                     <button type="submit" class="btn btn-primary mb-2">Add redirect</button>
                 </form>
+            </div>
+        @endif
+
+        @if($tab == '404info')
+            <div id="tab-page3" class="tab-page" @if($tab == "404info") style="display:block;"
+                 @else style="display:none;" @endif >
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th scope="col">Task name</th>
+                        <th scope="col">Count Page</th>
+                        <th scope="col">Count link</th>
+                        <th scope="col">Count error link</th>
+                        <th scope="col">Count js links</th>
+                        <th scope="col">Count blank</th>
+                        <th scope="col">Count empty links</th>
+                        <th scope="col">Count phone links</th>
+                        <th scope="col">Count image</th>
+                        <th scope="col">Count error image</th>
+                        <th scope="col">Count empty image</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if(isset($tasks))
+                        @foreach($tasks as $task)
+                            <tr>
+                                <td style="width: 50px;">{{$loop->iteration}}</td>
+                                <td>
+                                    <a href="{{$module_url}}&tab=404info_task&task_id={{$task->id}}">{{$task->name}} {{$task->date_end}}</a>
+                                </td>
+                                <td>
+                                    {{$task->count_page}}
+                                </td>
+                                <td>
+                                    {{$task->count_link}}
+                                </td>
+                                <td>
+                                    {{$task->count_error_link}}
+                                </td>
+                                <td>
+                                    {{$task->count_js_links}}
+                                </td>
+                                <td>
+                                    {{$task->count_blank}}
+                                </td>
+                                <td>
+                                    {{$task->count_empty_links}}
+                                </td>
+                                <td>
+                                    {{$task->count_phone_links}}
+                                </td>
+                                <td>
+                                    {{$task->count_image}}
+                                </td>
+                                <td>
+                                    {{$task->count_error_image}}
+                                </td>
+                                <td>
+                                    {{$task->count_empty_image}}
+                                </td>
+
+
+                            </tr>
+                        @endforeach
+                    @endif
+                    </tbody>
+                </table>
+                @if(isset($tasks))
+                    {!! $tasks->links('Zeo::paginate')->toHtml() !!}
+                @endif
+            </div>
+        @endif
+
+        @if($tab == '404info_task')
+            <div id="tab-page5" class="tab-page" @if($tab == "404info_task") style="display:block;"
+                 @else style="display:none;" @endif >
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th scope="col">Task name</th>
+                        <th scope="col">Count link</th>
+                        <th scope="col">Count error link</th>
+                        <th scope="col">Count js links</th>
+                        <th scope="col">Count blank</th>
+                        <th scope="col">Count empty links</th>
+                        <th scope="col">Count phone links</th>
+                        <th scope="col">Count image</th>
+                        <th scope="col">Count error image</th>
+                        <th scope="col">Count empty image</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if(isset($pages))
+                        @foreach($pages as $page)
+                            <tr>
+                                <td style="width: 50px;">{{$loop->iteration}}</td>
+                                <td>
+                                    <a href="{{$module_url}}&tab=404info_page&page_id={{$page->id}}">{{$page->url}}</a>
+                                </td>
+
+                                <td>
+                                    {{$page->count_link}}
+                                </td>
+                                <td>
+                                    {{$page->count_error_link}}
+                                </td>
+                                <td>
+                                    {{$page->count_js_links}}
+                                </td>
+                                <td>
+                                    {{$page->count_blank}}
+                                </td>
+                                <td>
+                                    {{$page->count_empty_links}}
+                                </td>
+                                <td>
+                                    {{$page->count_phone_links}}
+                                </td>
+                                <td>
+                                    {{$page->count_image}}
+                                </td>
+                                <td>
+                                    {{$page->count_error_image}}
+                                </td>
+                                <td>
+                                    {{$page->count_empty_image}}
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
+                    </tbody>
+                </table>
+                @if(isset($pages))
+                    {!! $pages->links('Zeo::paginate')->toHtml() !!}
+                @endif
+            </div>
+        @endif
+
+
+        @if($tab == '404info_page')
+            <div id="tab-page5" class="tab-page" @if($tab == "404info_page") style="display:block;"
+                 @else style="display:none;" @endif >
+                <h3>{{$page->url}}</h3>
+                <table>
+                    <tr>
+
+                        <td>
+                            Links: {{$page->count_link}}
+                        </td>
+                        <td>
+                            Error Links: {{$page->count_error_link}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Js Links: {{$page->count_js_links}}
+                        </td>
+
+                        <td>
+                            Blank Links: {{$page->count_blank}}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Empty Links: {{$page->count_empty_links}}
+                        </td>
+                        <td>
+                            Phone Links: {{$page->count_phone_links}}
+                        </td>
+                    </tr>
+                </table><br>
+                <table>
+                    <tr>
+                        <td>
+                            Images: {{$page->count_image}}
+                        </td>
+                        <td>
+                            Error Images: {{$page->count_error_image}}
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td>
+                            Empty Images: {{$page->count_empty_image}}
+                        </td>
+                    </tr>
+                </table>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th scope="col">Url</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Code</th>
+                        <th scope="col">Info</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if(isset($links))
+                        @foreach($links as $link)
+                            <tr>
+                                <td style="width: 50px;">{{$loop->iteration}}</td>
+                                <td>
+                                    {{$link->url}}
+                                </td>
+
+                                <td>
+                                    @switch($link->type)
+                                        @case(1)
+                                        Link
+                                        @break
+                                        @case(2)
+                                        Image
+                                        @break
+                                    @endswitch
+                                </td>
+                                <td>
+                                    @switch($link->code)
+                                        @case(1)
+                                        Blank
+                                        @break
+                                        @case(2)
+                                        Empty Link
+                                        @break
+                                        @default
+                                        {{$link->code }}
+                                        @break
+                                    @endswitch
+
+                                </td>
+                                <td>
+                                    {{$link->info }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
+                    </tbody>
+                </table>
+                @if(isset($links))
+                    {!! $links->links('Zeo::paginate')->toHtml() !!}
+                @endif
             </div>
         @endif
 

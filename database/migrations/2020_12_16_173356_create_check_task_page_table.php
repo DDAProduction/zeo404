@@ -17,15 +17,15 @@ class CreateCheckTaskPageTable extends Migration
             $table->id();
             $table->string('url');
             $table->bigInteger('task_id')->index();
-            $table->bigInteger('count_js_links')->default(0);
-            $table->bigInteger('count_phone_links')->default(0);
-            $table->bigInteger('count_empty_links')->default(0);
+            $table->bigInteger('count_js_links')->default(0)->index();
+            $table->bigInteger('count_phone_links')->default(0)->index();
+            $table->bigInteger('count_empty_links')->default(0)->index();
             $table->bigInteger('count_link')->default(0);
-            $table->bigInteger('count_error_link')->default(0);
-            $table->bigInteger('count_blank')->default(0);
-            $table->bigInteger('count_image')->default(0);
-            $table->bigInteger('count_error_image')->default(0);
-            $table->bigInteger('count_empty_image')->default(0);
+            $table->bigInteger('count_error_link')->default(0)->index();
+            $table->bigInteger('count_blank')->default(0)->index();
+            $table->bigInteger('count_image')->default(0)->index();
+            $table->bigInteger('count_error_image')->default(0)->index();
+            $table->bigInteger('count_empty_image')->default(0)->index();
             $table->timestamps();
         });
     }

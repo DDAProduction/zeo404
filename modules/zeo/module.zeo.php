@@ -99,5 +99,35 @@ switch ($tab) {
         $outTpl = (string)View::make('Zeo::main', $data);
         return $outTpl;
         break;
+    case '404info':
+        $data['tasks'] = \DDAProduction\Zeo404\Models\CheckTask::query()->orderBy('updated_at')->paginate(20)->appends($_GET);
+        $outTpl = (string)View::make('Zeo::main', $data);
+        return $outTpl;
+        break;
+    case '404info_task':
+        $data['task'] = \DDAProduction\Zeo404\Models\CheckTask::query()->find($_GET['task_id']);
+        $data['pages'] = \DDAProduction\Zeo404\Models\CheckTaskPage::query()
+            ->where('task_id', $_GET['task_id'])
+            ->where(function($query) {
+                $query->where('count_js_links', '>', 0)
+                    ->orWhere('count_empty_links', '>', 0)
+                    ->orWhere('count_error_link', '>', 0)
+                    ->orWhere('count_blank', '>', 0)
+                    ->orWhere('count_error_image', '>', 0)
+                    ->orWhere('count_empty_image', '>', 0);
+            })
+            ->orderBy('updated_at')->paginate(20)->appends($_GET);
+        $outTpl = (string)View::make('Zeo::main', $data);
+        return $outTpl;
+        break;
+    case '404info_page':
+        $data['page'] = \DDAProduction\Zeo404\Models\CheckTaskPage::query()->find($_GET['page_id']);
+        $data['links'] = \DDAProduction\Zeo404\Models\CheckTaskPageLink::query()
+            ->where('page_id', $_GET['page_id'])
+
+            ->orderBy('updated_at')->paginate(20)->appends($_GET);
+        $outTpl = (string)View::make('Zeo::main', $data);
+        return $outTpl;
+        break;
 }
 

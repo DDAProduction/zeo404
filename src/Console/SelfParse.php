@@ -82,12 +82,17 @@ class SelfParse extends Command
      * @var int
      */
     private $countLinks;
+    /**
+     * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
+     */
+    private $ignored_blanks;
 
     public function __construct()
     {
         parent::__construct();
         $this->sitemap = config('domain.sitemap_url');
         $this->domain = config('domain.current_site');
+        $this->ignored_blanks = config('domain.ignored_blanks', []);
     }
 
     public function handle()
@@ -147,7 +152,6 @@ class SelfParse extends Command
             $this->parsePage($link);
         }
         $bar->finish();
-
     }
 
     private function parsePage($link)
@@ -171,13 +175,11 @@ class SelfParse extends Command
         foreach ($urlsOnPage as $url) {
             $this->countLinks++;
 
-                $needCheck = $this->checkSkipped($url);
-                if ($needCheck) {
-                    $urlForCheck = $this->prepareLink($url->href);
-                    $this->checkLink($urlForCheck);
-                }
-
-
+            $needCheck = $this->checkSkipped($url);
+            if ($needCheck) {
+                $urlForCheck = $this->prepareLink($url->href);
+                $this->checkLink($urlForCheck, $url->text);
+            }
         }
         $imagesOnPage = $dom->getElementsbyTag('img');
         $this->checkedType = 2;
@@ -186,7 +188,7 @@ class SelfParse extends Command
             $urlForCheck = $this->prepareLink($url->src);
             $needCheck = $this->checkSkippedImage($url->src);
             if ($needCheck) {
-                $this->checkLink($urlForCheck);
+                $this->checkLink($urlForCheck, $url->alt ?? 'Image');
             }
         }
         $page->count_link = $this->countLinks;
@@ -216,7 +218,7 @@ class SelfParse extends Command
         return $href;
     }
 
-    private function checkLink($urlForCheck)
+    private function checkLink($urlForCheck, $info = '')
     {
         try {
             $status = Http::get($urlForCheck)->status();
@@ -225,23 +227,24 @@ class SelfParse extends Command
         }
 
         if ($status != 200) {
-            if($this->checkedType == 1) {
+            if ($this->checkedType == 1) {
                 $this->errorLinks++;
-            }else {
+            } else {
                 $this->errorImages++;
             }
-            $this->saveIncorrect($status, $urlForCheck);
+            $this->saveIncorrect($status, $urlForCheck, $info);
         }
     }
 
     private function checkSkipped($url): bool
     {
         if ($url->target != '') {
-            if($url->target == '_blank') {
-                $this->blankLinks++;
-                $this->saveIncorrect(1, $url->href, $url->text);
+            if ($url->target == '_blank') {
+                if (!in_array($url->href, $this->ignored_blanks)) {
+                    $this->blankLinks++;
+                    $this->saveIncorrect(1, $url->href, $url->text);
+                }
             }
-
         }
         if ($url->href == 'javascript:') {
             $this->jsLinks++;
@@ -261,6 +264,7 @@ class SelfParse extends Command
         }
         if (substr($url->href, 0, 3) == 'tel') {
             $this->phoneLinks++;
+
             return false;
         }
 
@@ -270,7 +274,6 @@ class SelfParse extends Command
     private function checkSkippedImage($href): bool
     {
         if (stristr($href, 'noimage-') === false) {
-
             return true;
         }
         $this->emptyImages++;
@@ -280,7 +283,15 @@ class SelfParse extends Command
 
     private function saveIncorrect(int $status, $urlForCheck, $info = '')
     {
-        CheckTaskPageLink::query()->create(['page_id' => $this->pageId, 'url'=>$urlForCheck, 'type'=>$this->checkedType, 'code'=>$status, 'info'=>$info]);
+        CheckTaskPageLink::query()->create(
+            [
+                'page_id' => $this->pageId,
+                'url' => $urlForCheck,
+                'type' => $this->checkedType,
+                'code' => $status,
+                'info' => $info
+            ]
+        );
     }
 
     private function updateTask(\Illuminate\Database\Eloquent\Model $task)

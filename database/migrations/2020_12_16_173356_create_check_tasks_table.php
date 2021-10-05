@@ -16,7 +16,7 @@ class CreateCheckTasksTable extends Migration
         Schema::create('check_tasks', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->date('date_end')->nullable();
+            $table->dateTime('date_end')->nullable();
             $table->bigInteger('count_page')->default(0);
             $table->bigInteger('count_link')->default(0);
             $table->bigInteger('count_js_links')->default(0);
