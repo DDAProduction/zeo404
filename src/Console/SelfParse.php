@@ -9,6 +9,7 @@ use DDAProduction\Zeo404\Models\CheckTaskPageLink;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use PHPHtmlParser\Dom;
+use Symfony\Component\Console\Helper\ProgressBar;
 
 class SelfParse extends Command
 {
@@ -86,6 +87,14 @@ class SelfParse extends Command
      * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
      */
     private $ignored_blanks;
+    /**
+     * @var array
+     */
+    private $arrayChecked = [];
+    /**
+     * @var array
+     */
+    private $validationArray = [];
 
     public function __construct()
     {
@@ -144,14 +153,26 @@ class SelfParse extends Command
     {
         $this->info('Found links: ' . $this->countPages);
         $this->info('Start check pages');
-        $bar = $this->output->createProgressBar($this->countPages);
-        $bar->start();
+        $bar1 = new ProgressBar($this->output, $this->countPages);
+      //  $bar2 = new ProgressBar($this->output, 10);
+
+        $bar1->start();
+       // $this->output->write("\033[1A");
+
+        // $bar2->start();
+//        $bar = $this->output->createProgressBar($this->countPages);
+//        $bar->start();
 
         foreach ($this->links as $link) {
-            $bar->advance();
+
+            $this->newLine();
+            //$this->output->write("\033[1A");
             $this->parsePage($link);
+            $bar1->advance();
+            //$bar2->advance();
         }
-        $bar->finish();
+        $bar1->finish();
+        //$bar2->finish();
     }
 
     private function parsePage($link)
@@ -172,25 +193,40 @@ class SelfParse extends Command
         $dom->loadFromUrl($link);
         $urlsOnPage = $dom->getElementsbyTag('a');
         $this->checkedType = 1;
-        foreach ($urlsOnPage as $url) {
-            $this->countLinks++;
+        $bar2 = $this->output->createProgressBar(count($urlsOnPage));
+        $bar2->start();
 
+
+        foreach ($urlsOnPage as $url) {
+            $bar2->advance();
+            $this->countLinks++;
             $needCheck = $this->checkSkipped($url);
             if ($needCheck) {
                 $urlForCheck = $this->prepareLink($url->href);
                 $this->checkLink($urlForCheck, $url->text);
             }
+            $this->validationArray[$url->href] = $this->arrayChecked;
+            $this->saveResult();
+            sleep(1);
         }
+        $bar2->finish();
         $imagesOnPage = $dom->getElementsbyTag('img');
         $this->checkedType = 2;
+        $bar3 = $this->output->createProgressBar(count($imagesOnPage));
+        $bar3->start();
         foreach ($imagesOnPage as $url) {
+            $bar3->advance();
             $this->countImages++;
             $urlForCheck = $this->prepareLink($url->src);
-            $needCheck = $this->checkSkippedImage($url->src);
+            $needCheck = $this->checkSkippedImage($url);
             if ($needCheck) {
                 $this->checkLink($urlForCheck, $url->alt ?? 'Image');
             }
+            $this->validationArray[$url->src] = $this->arrayChecked;
+            $this->saveResult();
+
         }
+        $bar3->finish();
         $page->count_link = $this->countLinks;
         $page->count_js_links = $this->jsLinks;
         $page->count_phone_links = $this->phoneLinks;
@@ -220,6 +256,7 @@ class SelfParse extends Command
 
     private function checkLink($urlForCheck, $info = '')
     {
+
         try {
             $status = Http::get($urlForCheck)->status();
         } catch (\Exception $exception) {
@@ -228,11 +265,12 @@ class SelfParse extends Command
 
         if ($status != 200) {
             if ($this->checkedType == 1) {
-                $this->errorLinks++;
+                $this->arrayChecked['errorLinks'] = 1;
+                $this->arrayChecked['errorLinksArray'] = ['status' => $status, 'url' => $urlForCheck, 'info' => $info];
             } else {
-                $this->errorImages++;
+                $this->arrayChecked['errorImages'] = 1;
+                $this->arrayChecked['errorImagesArray'] = ['status' => $status, 'url' => $urlForCheck, 'info' => $info];
             }
-            $this->saveIncorrect($status, $urlForCheck, $info);
         }
     }
 
@@ -241,29 +279,39 @@ class SelfParse extends Command
         if ($url->target != '') {
             if ($url->target == '_blank') {
                 if (!in_array($url->href, $this->ignored_blanks)) {
-                    $this->blankLinks++;
-                    $this->saveIncorrect(1, $url->href, $url->text);
+                    $this->arrayChecked['blankLinks'] = 1;
+                    $this->arrayChecked['blankArray'] = ['status' => 1, 'url' => $url->href, 'info' => $url->text];
                 }
             }
         }
-        if ($url->href == 'javascript:') {
-            $this->jsLinks++;
+        if (stristr($url->href, 'javascript:') !== false) {
+            $this->arrayChecked['jsLinks'] = 1;
 
             return false;
         }
         if ($url->href == '') {
-            $this->emptyLinks++;
-            $this->saveIncorrect(2, $url->href, $url->text);
+            $this->arrayChecked['emptyLinks'] = 1;
+            $this->arrayChecked['emptyArray'] = ['status' => 1, 'url' => $url->href, 'info' => $url->text];
+
 
             return false;
         }
         if ($url->href == '#') {
-            $this->jsLinks++;
+            $this->arrayChecked['jsLinks'] = 1;
 
             return false;
         }
         if (substr($url->href, 0, 3) == 'tel') {
-            $this->phoneLinks++;
+            $this->arrayChecked['phoneLinks'] = 1;
+
+            return false;
+        }
+
+        if (isset($this->validationArray[$url->href])) {
+            if (isset($this->validationArray[$url->href]['errorLinks'])) {
+                $this->arrayChecked['errorLinks'] = $this->validationArray[$url->href]['errorLinks'];
+                $this->arrayChecked['errorLinksArray'] = $this->validationArray[$url->href]['errorLinksArray'];
+            }
 
             return false;
         }
@@ -271,12 +319,22 @@ class SelfParse extends Command
         return true;
     }
 
-    private function checkSkippedImage($href): bool
+    private function checkSkippedImage($url): bool
     {
-        if (stristr($href, 'noimage-') === false) {
+        if (isset($this->validationArray[$url->src])) {
+            if (isset($this->validationArray[$url->src]['errorImages'])) {
+                $this->arrayChecked['errorImages'] = $this->validationArray[$url->src]['errorImages'];
+                $this->arrayChecked['errorImagesArray'] = $this->validationArray[$url->src]['errorImagesArray'];
+            }
+
+            return false;
+        }
+
+        if (stristr($url->src, 'noimage-') === false) {
             return true;
         }
-        $this->emptyImages++;
+        $this->arrayChecked['emptyImages'] = 1;
+
 
         return false;
     }
@@ -308,6 +366,54 @@ class SelfParse extends Command
         $task->count_empty_image = CheckTaskPage::query()->where('task_id', $task->getKey())->sum('count_empty_image');
         $task->date_end = Carbon::now();
         $task->save();
+    }
+
+    private function saveResult()
+    {
+        if (isset($this->arrayChecked['blankLinks'])) {
+            $this->blankLinks++;
+            $this->saveIncorrect(
+                $this->arrayChecked['blankArray']['status'],
+                $this->arrayChecked['blankArray']['url'],
+                $this->arrayChecked['blankArray']['info']
+            );
+        }
+        if (isset($this->arrayChecked['errorLinks'])) {
+            $this->errorLinks++;
+            $this->saveIncorrect(
+                $this->arrayChecked['errorLinksArray']['status'],
+                $this->arrayChecked['errorLinksArray']['url'],
+                $this->arrayChecked['errorLinksArray']['info']
+            );
+        }
+        if (isset($this->arrayChecked['emptyLinks'])) {
+            $this->emptyLinks++;
+            $this->saveIncorrect(
+                $this->arrayChecked['emptyArray']['status'],
+                $this->arrayChecked['emptyArray']['url'],
+                $this->arrayChecked['emptyArray']['info']
+            );
+        }
+        if (isset($this->arrayChecked['phoneLinks'])) {
+            $this->phoneLinks++;
+        }
+        if (isset($this->arrayChecked['jsLinks'])) {
+            $this->jsLinks++;
+        }
+        if (isset($this->arrayChecked['emptyImages'])) {
+            $this->emptyImages++;
+        }
+        if (isset($this->arrayChecked['errorImages'])) {
+            $this->errorImages++;
+            $this->saveIncorrect(
+                $this->arrayChecked['errorImagesArray']['status'],
+                $this->arrayChecked['errorImagesArray']['url'],
+                $this->arrayChecked['errorImagesArray']['info']
+            );
+        }
+
+
+        $this->arrayChecked = [];
     }
 
 }
