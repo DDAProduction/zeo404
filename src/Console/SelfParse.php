@@ -96,6 +96,8 @@ class SelfParse extends Command
      */
     private $validationArray = [];
 
+    private $currentUrl = '';
+
     public function __construct()
     {
         parent::__construct();
@@ -154,25 +156,19 @@ class SelfParse extends Command
         $this->info('Found links: ' . $this->countPages);
         $this->info('Start check pages');
         $bar1 = new ProgressBar($this->output, $this->countPages);
-      //  $bar2 = new ProgressBar($this->output, 10);
 
         $bar1->start();
-       // $this->output->write("\033[1A");
 
-        // $bar2->start();
-//        $bar = $this->output->createProgressBar($this->countPages);
-//        $bar->start();
 
         foreach ($this->links as $link) {
-
             $this->newLine();
-            //$this->output->write("\033[1A");
+
             $this->parsePage($link);
             $bar1->advance();
-            //$bar2->advance();
+
         }
         $bar1->finish();
-        //$bar2->finish();
+
     }
 
     private function parsePage($link)
@@ -206,8 +202,8 @@ class SelfParse extends Command
                 $this->checkLink($urlForCheck, $url->text);
             }
             $this->validationArray[$url->href] = $this->arrayChecked;
+            $this->currentUrl = $url->href;
             $this->saveResult();
-            sleep(1);
         }
         $bar2->finish();
         $imagesOnPage = $dom->getElementsbyTag('img');
@@ -224,7 +220,6 @@ class SelfParse extends Command
             }
             $this->validationArray[$url->src] = $this->arrayChecked;
             $this->saveResult();
-
         }
         $bar3->finish();
         $page->count_link = $this->countLinks;
@@ -256,11 +251,23 @@ class SelfParse extends Command
 
     private function checkLink($urlForCheck, $info = '')
     {
-
         try {
-            $status = Http::get($urlForCheck)->status();
+            $header=array(
+                'User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12',
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language: en-us,en;q=0.5',
+                'Accept-Encoding: gzip,deflate',
+                'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+                'Keep-Alive: 115',
+                'Connection: keep-alive',
+            );
+
+            $status = Http::withHeaders($header)->timeout(3)->get($urlForCheck)->status();
         } catch (\Exception $exception) {
             $status = 404;
+            if(stristr($exception->getMessage(), 'Connection timed') !== false) {
+                $status = 504;
+            }
         }
 
         if ($status != 200) {
@@ -289,9 +296,9 @@ class SelfParse extends Command
 
             return false;
         }
-        if ($url->href == '') {
+        if (trim($url->href) == '') {
             $this->arrayChecked['emptyLinks'] = 1;
-            $this->arrayChecked['emptyArray'] = ['status' => 1, 'url' => $url->href, 'info' => $url->text];
+            $this->arrayChecked['emptyArray'] = ['status' => 2, 'url' => 'no_link', 'info' => $url->text];
 
 
             return false;
@@ -341,6 +348,7 @@ class SelfParse extends Command
 
     private function saveIncorrect(int $status, $urlForCheck, $info = '')
     {
+        try {
         CheckTaskPageLink::query()->create(
             [
                 'page_id' => $this->pageId,
@@ -350,6 +358,13 @@ class SelfParse extends Command
                 'info' => $info
             ]
         );
+        }catch (\Exception $exception) {
+            $this->info($this->currentUrl);
+            $this->info($urlForCheck);
+            $this->info($status);
+            $this->info($exception->getMessage());
+            exit();
+        }
     }
 
     private function updateTask(\Illuminate\Database\Eloquent\Model $task)
