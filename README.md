@@ -9,7 +9,8 @@
 5) Edit file `custom/config/domain.php` change variables: 
    1) **current_site** - your domain
    2) **sitemap_url** - link to u sitemap.xml
-   3) **ignored_blanks** - array with links what will ignore
+   3) **ignored_blanks** - array with links what will ignore like blank
+   4) **ignored_all** - array with links what will ignore all time
 6) Run `php artisan self:parse`
 7) Wait...
 8) Go to manager and check **modules->zeo404**

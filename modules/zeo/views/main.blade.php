@@ -284,7 +284,8 @@
                     <thead>
                     <tr>
                         <th style="width: 50px;">#</th>
-                        <th scope="col">Task name</th>
+                        <th scope="col">Url</th>
+                        <th scope="col">Status</th>
                         <th scope="col">Count link</th>
                         <th scope="col">Count error link</th>
                         <th scope="col">Count js links</th>
@@ -301,8 +302,12 @@
                         @foreach($pages as $page)
                             <tr>
                                 <td style="width: 50px;">{{$loop->iteration}}</td>
-                                <td>
+                                <td style="word-break: break-word;">
                                     <a href="{{$module_url}}&tab=404info_page&page_id={{$page->id}}">{{$page->url}}</a>
+                                </td>
+
+                                <td>
+                                    {{$page->status}}
                                 </td>
 
                                 <td>
@@ -407,7 +412,7 @@
                         @foreach($links as $link)
                             <tr>
                                 <td style="width: 50px;">{{$loop->iteration}}</td>
-                                <td>
+                                <td style="word-break: break-word;">
                                     {{$link->url}}
                                 </td>
 

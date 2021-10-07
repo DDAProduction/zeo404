@@ -18,6 +18,7 @@ class CheckTaskPage extends Eloquent\Model
     protected $fillable = [
         'url',
         'task_id',
+        'status',
         'count_link',
         'count_js_links',
         'count_phone_links',

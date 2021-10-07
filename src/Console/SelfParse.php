@@ -8,6 +8,7 @@ use DDAProduction\Zeo404\Models\CheckTaskPage;
 use DDAProduction\Zeo404\Models\CheckTaskPageLink;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\View\View;
 use PHPHtmlParser\Dom;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -97,6 +98,14 @@ class SelfParse extends Command
     private $validationArray = [];
 
     private $currentUrl = '';
+    /**
+     * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
+     */
+    private $ignored_all;
+    /**
+     * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
+     */
+    private $email_notify;
 
     public function __construct()
     {
@@ -104,6 +113,8 @@ class SelfParse extends Command
         $this->sitemap = config('domain.sitemap_url');
         $this->domain = config('domain.current_site');
         $this->ignored_blanks = config('domain.ignored_blanks', []);
+        $this->ignored_all = config('domain.ignored_all', []);
+        $this->email_notify = config('domain.email_notify', '');
     }
 
     public function handle()
@@ -165,10 +176,8 @@ class SelfParse extends Command
 
             $this->parsePage($link);
             $bar1->advance();
-
         }
         $bar1->finish();
-
     }
 
     private function parsePage($link)
@@ -184,44 +193,53 @@ class SelfParse extends Command
         $this->countImages = 0;
         $this->countLinks = 0;
         $this->pageId = $page->getKey();
+        $skip = true;
         $dom = new Dom;
-
-        $dom->loadFromUrl($link);
-        $urlsOnPage = $dom->getElementsbyTag('a');
-        $this->checkedType = 1;
-        $bar2 = $this->output->createProgressBar(count($urlsOnPage));
-        $bar2->start();
-
-
-        foreach ($urlsOnPage as $url) {
-            $bar2->advance();
-            $this->countLinks++;
-            $needCheck = $this->checkSkipped($url);
-            if ($needCheck) {
-                $urlForCheck = $this->prepareLink($url->href);
-                $this->checkLink($urlForCheck, $url->text);
-            }
-            $this->validationArray[$url->href] = $this->arrayChecked;
-            $this->currentUrl = $url->href;
-            $this->saveResult();
+        try {
+            $dom->loadFromUrl($link);
+            $status = 200;
+        } catch (\Exception $exception) {
+            $skip = false;
+            $status = 404;
         }
-        $bar2->finish();
-        $imagesOnPage = $dom->getElementsbyTag('img');
-        $this->checkedType = 2;
-        $bar3 = $this->output->createProgressBar(count($imagesOnPage));
-        $bar3->start();
-        foreach ($imagesOnPage as $url) {
-            $bar3->advance();
-            $this->countImages++;
-            $urlForCheck = $this->prepareLink($url->src);
-            $needCheck = $this->checkSkippedImage($url);
-            if ($needCheck) {
-                $this->checkLink($urlForCheck, $url->alt ?? 'Image');
+        if ($skip) {
+            $urlsOnPage = $dom->getElementsbyTag('a');
+            $this->checkedType = 1;
+            $bar2 = $this->output->createProgressBar(count($urlsOnPage));
+            $bar2->start();
+
+
+            foreach ($urlsOnPage as $url) {
+                $bar2->advance();
+                $this->countLinks++;
+                $needCheck = $this->checkSkipped($url);
+                if ($needCheck) {
+                    $urlForCheck = $this->prepareLink($url->href);
+                    $this->checkLink($urlForCheck, $url->text);
+                }
+                $this->validationArray[$url->href] = $this->arrayChecked;
+                $this->currentUrl = $url->href;
+                $this->saveResult();
             }
-            $this->validationArray[$url->src] = $this->arrayChecked;
-            $this->saveResult();
+            $bar2->finish();
+            $imagesOnPage = $dom->getElementsbyTag('img');
+            $this->checkedType = 2;
+            $bar3 = $this->output->createProgressBar(count($imagesOnPage));
+            $bar3->start();
+            foreach ($imagesOnPage as $url) {
+                $bar3->advance();
+                $this->countImages++;
+                $urlForCheck = $this->prepareLink($url->src);
+                $needCheck = $this->checkSkippedImage($url);
+                if ($needCheck) {
+                    $this->checkLink($urlForCheck, $url->alt ?? 'Image');
+                }
+                $this->validationArray[$url->src] = $this->arrayChecked;
+                $this->saveResult();
+            }
+            $bar3->finish();
         }
-        $bar3->finish();
+        $page->status = $status;
         $page->count_link = $this->countLinks;
         $page->count_js_links = $this->jsLinks;
         $page->count_phone_links = $this->phoneLinks;
@@ -251,12 +269,14 @@ class SelfParse extends Command
 
     private function checkLink($urlForCheck, $info = '')
     {
+        if (in_array($urlForCheck, $this->ignored_all)) {
+            return;
+        }
         try {
-
             $status = Http::timeout(3)->get($urlForCheck)->status();
         } catch (\Exception $exception) {
             $status = 404;
-            if(stristr($exception->getMessage(), 'Connection timed') !== false) {
+            if (stristr($exception->getMessage(), 'Connection timed') !== false) {
                 $status = 504;
             }
         }
@@ -340,16 +360,16 @@ class SelfParse extends Command
     private function saveIncorrect(int $status, $urlForCheck, $info = '')
     {
         try {
-        CheckTaskPageLink::query()->create(
-            [
-                'page_id' => $this->pageId,
-                'url' => $urlForCheck,
-                'type' => $this->checkedType,
-                'code' => $status,
-                'info' => $info
-            ]
-        );
-        }catch (\Exception $exception) {
+            CheckTaskPageLink::query()->create(
+                [
+                    'page_id' => $this->pageId,
+                    'url' => $urlForCheck,
+                    'type' => $this->checkedType,
+                    'code' => $status,
+                    'info' => $info
+                ]
+            );
+        } catch (\Exception $exception) {
             $this->info($this->currentUrl);
             $this->info($urlForCheck);
             $this->info($status);
@@ -372,6 +392,9 @@ class SelfParse extends Command
         $task->count_empty_image = CheckTaskPage::query()->where('task_id', $task->getKey())->sum('count_empty_image');
         $task->date_end = Carbon::now();
         $task->save();
+        if ($this->email_notify != '') {
+            $this->sendMail($task);
+        }
     }
 
     private function saveResult()
@@ -420,6 +443,17 @@ class SelfParse extends Command
 
 
         $this->arrayChecked = [];
+    }
+
+    private function sendMail(\Illuminate\Database\Eloquent\Model $task)
+    {
+        $param = array();
+        $param['from'] = evo()->getConfig('emailsender');
+        $param['subject'] = 'Task complete ' . $task->name;
+        $param['body'] = \Illuminate\Support\Facades\View::make('Zeo::mail', ['task' => $task->toArray()]);
+        $param['to'] = $this->email_notify;
+        $rs = evo()->sendmail($param);
+
     }
 
 }
