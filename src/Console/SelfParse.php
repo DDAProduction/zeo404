@@ -252,17 +252,8 @@ class SelfParse extends Command
     private function checkLink($urlForCheck, $info = '')
     {
         try {
-            $header=array(
-                'User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.2.12) Gecko/20101026 Firefox/3.6.12',
-                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language: en-us,en;q=0.5',
-                'Accept-Encoding: gzip,deflate',
-                'Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-                'Keep-Alive: 115',
-                'Connection: keep-alive',
-            );
 
-            $status = Http::withHeaders($header)->timeout(3)->get($urlForCheck)->status();
+            $status = Http::timeout(3)->get($urlForCheck)->status();
         } catch (\Exception $exception) {
             $status = 404;
             if(stristr($exception->getMessage(), 'Connection timed') !== false) {
