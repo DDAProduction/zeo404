@@ -280,6 +280,60 @@
         @if($tab == '404info_task')
             <div id="tab-page5" class="tab-page" @if($tab == "404info_task") style="display:block;"
                  @else style="display:none;" @endif >
+                <form method="get" id="filter" name="filter">
+                    <input type="hidden" name="a" value="{{$_GET['a']}}">
+                    <input type="hidden" name="id" value="{{$_GET['id']}}">
+                    <input type="hidden" name="tab" value="{{$_GET['tab']}}">
+                    <input type="hidden" name="task_id" value="{{$_GET['task_id']}}">
+                    <div class="form-group row">
+                        <label for="inputPassword" class="col-sm-2 col-form-label">Order By:</label>
+                        <div class="col-sm-10">
+                            <select name="orderby" id="inputPassword" onchange="document.forms['filter'].submit();">
+                                <option value="default" @if(!isset($_GET['orderby']))selected @endif>Default</option>
+                                <option value="status"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'status')selected @endif>
+                                    Status
+                                </option>
+                                <option value="count_link"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_link')selected @endif>
+                                    Count link
+                                </option>
+                                <option value="count_error_link"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_error_link')selected @endif>
+                                    Count error link
+                                </option>
+                                <option value="count_js_links"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_js_links')selected @endif>
+                                    Count js links
+                                </option>
+                                <option value="count_blank"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_blank')selected @endif>
+                                    Count blank
+                                </option>
+                                <option value="count_empty_links"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_empty_links')selected @endif>
+                                    Count empty links
+                                </option>
+                                <option value="count_phone_links"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_phone_links')selected @endif>
+                                    Count phone links
+                                </option>
+                                <option value="count_image"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_image')selected @endif>
+                                    Count image
+                                </option>
+                                <option value="count_error_image"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_error_image')selected @endif>
+                                    Count error image
+                                </option>
+                                <option value="count_empty_image"
+                                        @if(isset($_GET['orderby']) && $_GET['orderby'] == 'count_empty_image')selected @endif>
+                                    Count empty image
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
                 <table class="table table-striped">
                     <thead>
                     <tr>
@@ -380,7 +434,8 @@
                             Phone Links: {{$page->count_phone_links}}
                         </td>
                     </tr>
-                </table><br>
+                </table>
+                <br>
                 <table>
                     <tr>
                         <td>
