@@ -106,6 +106,14 @@ class SelfParse extends Command
      * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
      */
     private $email_notify;
+    /**
+     * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
+     */
+    private $timeout;
+    /**
+     * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
+     */
+    private $write_blank;
 
     public function __construct()
     {
@@ -115,6 +123,8 @@ class SelfParse extends Command
         $this->ignored_blanks = config('domain.ignored_blanks', []);
         $this->ignored_all = config('domain.ignored_all', []);
         $this->email_notify = config('domain.email_notify', '');
+        $this->timeout = config('domain.timeout', 5);
+        $this->write_blank = config('domain.write_blank', true);
     }
 
     public function handle()
@@ -194,15 +204,22 @@ class SelfParse extends Command
         $this->countLinks = 0;
         $this->pageId = $page->getKey();
         $skip = true;
-        $dom = new Dom;
+        $body = '';
         try {
-            $dom->loadFromUrl($link);
+            $request = Http::timeout($this->timeout)->get($link);
+            $body = $request->body();
             $status = 200;
         } catch (\Exception $exception) {
             $skip = false;
             $status = 404;
+            if (stristr($exception->getMessage(), 'Connection timed') !== false) {
+                $status = 504;
+            }
         }
+
         if ($skip) {
+            $dom = new Dom;
+            $dom->loadStr($body);
             $urlsOnPage = $dom->getElementsbyTag('a');
             $this->checkedType = 1;
             $bar2 = $this->output->createProgressBar(count($urlsOnPage));
@@ -273,7 +290,7 @@ class SelfParse extends Command
             return;
         }
         try {
-            $status = Http::timeout(3)->get($urlForCheck)->status();
+            $status = Http::timeout($this->timeout)->get($urlForCheck)->status();
         } catch (\Exception $exception) {
             $status = 404;
             if (stristr($exception->getMessage(), 'Connection timed') !== false) {
@@ -401,11 +418,13 @@ class SelfParse extends Command
     {
         if (isset($this->arrayChecked['blankLinks'])) {
             $this->blankLinks++;
-            $this->saveIncorrect(
-                $this->arrayChecked['blankArray']['status'],
-                $this->arrayChecked['blankArray']['url'],
-                $this->arrayChecked['blankArray']['info']
-            );
+            if ($this->write_blank) {
+                $this->saveIncorrect(
+                    $this->arrayChecked['blankArray']['status'],
+                    $this->arrayChecked['blankArray']['url'],
+                    $this->arrayChecked['blankArray']['info']
+                );
+            }
         }
         if (isset($this->arrayChecked['errorLinks'])) {
             $this->errorLinks++;
@@ -453,7 +472,6 @@ class SelfParse extends Command
         $param['body'] = \Illuminate\Support\Facades\View::make('Zeo::mail', ['task' => $task->toArray()]);
         $param['to'] = $this->email_notify;
         $rs = evo()->sendmail($param);
-
     }
 
 }

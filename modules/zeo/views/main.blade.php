@@ -352,7 +352,7 @@
         @if($tab == '404info_page')
             <div id="tab-page5" class="tab-page" @if($tab == "404info_page") style="display:block;"
                  @else style="display:none;" @endif >
-                <h3>{{$page->url}}</h3>
+                <h3><a href="{{$page->url}}" target="_blank">{{$page->url}}</a></h3>
                 <table>
                     <tr>
 
@@ -413,7 +413,7 @@
                             <tr>
                                 <td style="width: 50px;">{{$loop->iteration}}</td>
                                 <td style="word-break: break-word;">
-                                    {{$link->url}}
+                                    <a href="{{$link->url}}" target="_blank">{{$link->url}}</a>
                                 </td>
 
                                 <td>

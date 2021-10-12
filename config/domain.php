@@ -5,4 +5,6 @@ return [
     'ignored_blanks' => [],
     'ignored_all' => [],
     'email_notify' => '',
+    'timeout' => '5',
+    'write_blank' => true,
 ];
