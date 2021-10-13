@@ -14,6 +14,7 @@
    5) **email_notify** - email for send result work script
    6) **timeout** - timeout for waiting connect
    7) **write_blank** - record Blank pages to report
+   8) **write_empty** - record Empty link pages to report
 6) Run `php artisan self:parse`
 7) Wait...
 8) Go to manager and check **modules->zeo404**

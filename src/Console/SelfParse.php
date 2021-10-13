@@ -8,7 +8,6 @@ use DDAProduction\Zeo404\Models\CheckTaskPage;
 use DDAProduction\Zeo404\Models\CheckTaskPageLink;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
-use Illuminate\View\View;
 use PHPHtmlParser\Dom;
 use Symfony\Component\Console\Helper\ProgressBar;
 
@@ -114,6 +113,7 @@ class SelfParse extends Command
      * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
      */
     private $write_blank;
+    private $write_empty;
 
     public function __construct()
     {
@@ -125,6 +125,7 @@ class SelfParse extends Command
         $this->email_notify = config('domain.email_notify', '');
         $this->timeout = config('domain.timeout', 5);
         $this->write_blank = config('domain.write_blank', true);
+        $this->write_empty = config('domain.write_empty', true);
     }
 
     public function handle()
@@ -436,11 +437,13 @@ class SelfParse extends Command
         }
         if (isset($this->arrayChecked['emptyLinks'])) {
             $this->emptyLinks++;
-            $this->saveIncorrect(
-                $this->arrayChecked['emptyArray']['status'],
-                $this->arrayChecked['emptyArray']['url'],
-                $this->arrayChecked['emptyArray']['info']
-            );
+            if ($this->write_empty) {
+                $this->saveIncorrect(
+                    $this->arrayChecked['emptyArray']['status'],
+                    $this->arrayChecked['emptyArray']['url'],
+                    $this->arrayChecked['emptyArray']['info']
+                );
+            }
         }
         if (isset($this->arrayChecked['phoneLinks'])) {
             $this->phoneLinks++;

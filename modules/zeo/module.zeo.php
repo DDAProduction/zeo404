@@ -1,12 +1,8 @@
 <?php
 //require 'vendor/autoload.php';
 
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Illuminate\Support\Facades\View;
-use EvolutionCMS\EvoImportExportPackage\Models\RoamingTariffs;
 use EvolutionCMS\Main\Models\SiteContent;
-use EvolutionCMS\Models\SiteTmplvarContentvalue;
 
 if (IN_MANAGER_MODE != "true" || empty($modx) || !($modx instanceof DocumentParser)) {
     die("<b>INCLUDE_ORDERING_ERROR</b><br /><br />Please use the MODX Content Manager instead of accessing this file directly.");
