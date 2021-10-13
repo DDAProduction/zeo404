@@ -107,7 +107,7 @@ switch ($tab) {
         return $outTpl;
         break;
     case '404info':
-        $data['tasks'] = \DDAProduction\Zeo404\Models\CheckTask::query()->orderBy('updated_at')->paginate(20)->appends(
+        $data['tasks'] = \DDAProduction\Zeo404\Models\CheckTask::query()->orderBy('updated_at', 'DESC')->paginate(20)->appends(
             $_GET
         );
         $outTpl = (string)View::make('Zeo::main', $data);

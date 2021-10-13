@@ -214,6 +214,7 @@
                     <tr>
                         <th style="width: 50px;">#</th>
                         <th scope="col">Task name</th>
+                        <th scope="col">Date task</th>
                         <th scope="col">Count Page</th>
                         <th scope="col">Count link</th>
                         <th scope="col">Count error link</th>
@@ -233,6 +234,9 @@
                                 <td style="width: 50px;">{{$loop->iteration}}</td>
                                 <td>
                                     <a href="{{$module_url}}&tab=404info_task&task_id={{$task->id}}">{{$task->name}} {{$task->date_end}}</a>
+                                </td>
+                                <td>
+                                    {{$task->created_at}}
                                 </td>
                                 <td>
                                     {{$task->count_page}}
