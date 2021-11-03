@@ -99,7 +99,7 @@ switch ($tab) {
         return $outTpl;
         break;
     case 'main':
-        $data['links'] = \DDAProduction\Zeo404\Models\ZeoUrl::query()->orderBy('updated_at')->paginate(20)->appends(
+        $data['links'] = \DDAProduction\Zeo404\Models\ZeoUrl::query()->orderBy('count_error', 'DESC')->paginate(20)->appends(
             $_GET
         );
         $outTpl = (string)View::make('Zeo::main', $data);
