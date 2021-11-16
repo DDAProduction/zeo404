@@ -7,4 +7,6 @@ return [
     'email_notify' => '',
     'timeout' => '5',
     'write_blank' => true,
+    'sleep_after_link' => 0,
+    'sleep_after_page' => 0,
 ];

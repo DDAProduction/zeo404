@@ -113,7 +113,12 @@ class SelfParse extends Command
      * @var \EvolutionCMS\Core|\Illuminate\Config\Repository|mixed
      */
     private $write_blank;
+
     private $write_empty;
+
+    private $sleep_after_link;
+
+    private $sleep_after_page;
 
     public function __construct()
     {
@@ -126,6 +131,8 @@ class SelfParse extends Command
         $this->timeout = config('domain.timeout', 5);
         $this->write_blank = config('domain.write_blank', true);
         $this->write_empty = config('domain.write_empty', true);
+        $this->sleep_after_link = config('domain.sleep_after_link', 0);
+        $this->sleep_after_page = config('domain.sleep_after_page', 0);
     }
 
     public function handle()
@@ -268,6 +275,7 @@ class SelfParse extends Command
         $page->count_error_image = $this->errorImages;
         $page->count_empty_image = $this->emptyImages;
         $page->save();
+        sleep($this->sleep_after_page);
     }
 
     private function prepareLink($href)
@@ -292,6 +300,7 @@ class SelfParse extends Command
         }
         try {
             $status = Http::timeout($this->timeout)->get($urlForCheck)->status();
+            sleep($this->sleep_after_link);
         } catch (\Exception $exception) {
             $status = 404;
             if (stristr($exception->getMessage(), 'Connection timed') !== false) {
