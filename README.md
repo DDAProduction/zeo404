@@ -13,8 +13,10 @@
    4) **ignored_all** - array with links what will ignore all time
    5) **email_notify** - email for send result work script
    6) **timeout** - timeout for waiting connect
-   7) **write_blank** - record Blank pages to report
-   8) **write_empty** - record Empty link pages to report
+   7) **sleep_after_link** - timeout for sleep after parse link (in sec)
+   8) **sleep_after_page** - timeout for sleep after parse link (in sec)
+   9) **write_blank** - record Blank pages to report
+   10) **write_empty** - record Empty link pages to report
 6) Run `php artisan self:parse`
 7) Wait...
 8) Go to manager and check **modules->zeo404**
